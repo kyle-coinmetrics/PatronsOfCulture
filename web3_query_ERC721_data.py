@@ -483,7 +483,6 @@ def main():
     outdir = os.path.join(r"C:\Users\kylej\Documents\GitHub\PatronsOfCulture\data","top_{}_eth_addresses_{}.xlsx".format(top_ranks,datetime.now().strftime("%Y%m%d")))
     df_tokens_by_adr_platform_wtime_top200.to_excel(outdir,index=False)
     
-    
     #####################################
     ### FIRST COLLECTOR ON EACH PLATFORM
     #####################################

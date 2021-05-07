@@ -16,11 +16,10 @@ import pandas as pd
 ########
 # Data and Variables
 ########
-
 url_github_data = "https://github.com/kylejwaters/PatronsOfCulture/blob/main/data/top_200_eth_addresses_20210507.xlsx?raw=True"
 df_data = pd.read_excel(url_github_data)
 
-########### Initiate the app
+########### Initiate the app #######
 app = dash.Dash(__name__,update_title=None)
 server = app.server
 app.title="PatronsOfCulture"
