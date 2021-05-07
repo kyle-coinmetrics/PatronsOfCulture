@@ -17,7 +17,7 @@ import pandas as pd
 # Data and Variables
 ########
 
-url_github_data = "https://github.com/kylejwaters/PatronsOfCulture/blob/main/data/top_200_eth_addresses_20210506.xlsx?raw=True"
+url_github_data = "https://github.com/kylejwaters/PatronsOfCulture/blob/main/data/top_200_eth_addresses_20210507.xlsx?raw=True"
 df_data = pd.read_excel(url_github_data)
 
 ########### Initiate the app
@@ -36,7 +36,7 @@ rankings = html.Div(
     
     html.Div(
     
-    dbc.Table.from_dataframe(df_data, striped=True, bordered=True, hover=True,style={'color':'#04D9FF',"font-family":"NeueMachina-Regular"}),
+    dbc.Table.from_dataframe(df_data, striped=True, bordered=True, hover=True,style={'color':'#723BC9',"font-family":"NeueMachina-Regular"}),
     )
 
     ]

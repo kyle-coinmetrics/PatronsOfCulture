@@ -478,7 +478,7 @@ def main():
     #rename
     df_tokens_by_adr_platform_wtime_top200.columns =["Rank","Name","Adr","SuperRare","Foundation","KnownOrigin","MakersPlace","ASYNC","First","Recent"]
     df_tokens_by_adr_platform_wtime_top200.First  = df_tokens_by_adr_platform_wtime_top200.First.apply(str)
-    df_tokens_by_adr_platform_wtime_top200.Recent = df_tokens_by_adr_platform_wtime_top200.First.apply(str)
+    df_tokens_by_adr_platform_wtime_top200.Recent = df_tokens_by_adr_platform_wtime_top200.Recent.apply(str)
     
     outdir = os.path.join(r"C:\Users\kylej\Documents\GitHub\PatronsOfCulture\data","top_{}_eth_addresses_{}.xlsx".format(top_ranks,datetime.now().strftime("%Y%m%d")))
     df_tokens_by_adr_platform_wtime_top200.to_excel(outdir,index=False)
