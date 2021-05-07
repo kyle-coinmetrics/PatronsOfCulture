@@ -1,10 +1,31 @@
 .app-header {
     height: 60px;
     line-height: 60px;
-    border-bottom: thin lightgrey solid;
+    border-bottom: thin #04D9FF solid;
+    font-family:"NeueMachina-Regular";
+}
+.app-header .app-header--title {
+    font-size: 24px;
+    padding-left: 100px;
+}
+.app-header #app-header--rankings {
+    font-size: 18px;
+    position: absolute;
+    top:15px;
+    right:300px;
+    color:#723BC9;
+}
+.app-header #app-header--about {
+    font-size: 18px;
+    position: absolute;
+    top:15px;
+    right:225px;
+    color:#723BC9;
+}
+.app-header #app-header--rankings:hover {
+    color:#723BC980;
+}
+.app-header #app-header--about:hover {
+    color:#723BC980;
 }
 
-.app-header .app-header--title {
-    font-size: 22px;
-    padding-left: 5px;
-}

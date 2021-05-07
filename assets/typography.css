@@ -1,6 +1,7 @@
-body {
-    font-family: NeueMachina-Regular;
+@font-face {
+    font-family: "NeueMachina-Regular";
+    src: url("fonts/NeueMachina-Regular.otf") format("opentype");
 }
 h1, h2, h3, h4, h5, h6 {
-    color: black
+    font-family:"NeueMachina-Regular";
 }
