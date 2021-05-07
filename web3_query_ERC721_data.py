@@ -470,8 +470,17 @@ def main():
     df_tokens_by_adr_platform_wtime_top200["RecentTransfer_blockTime"] = df_tokens_by_adr_platform_wtime_top200["RecentTransfer_blockTime"].apply(lambda x: x.replace(tzinfo=None)).dt.date
     df_tokens_by_adr_platform_wtime_top200["FirstTransfer_blockTime"]  = df_tokens_by_adr_platform_wtime_top200["FirstTransfer_blockTime"].apply(lambda x: x.replace(tzinfo=None)).dt.date
     df_tokens_by_adr_platform_wtime_top200.sort_values("AllCountRank",inplace=True)
+    #Design - Rank / SuperRare , Foundation , KnownOrigin, MakersPlace, ASYNC, First, Most Recent
+    
+    count_cols = df_tokens_by_adr_platform_wtime_top200.columns[:5].tolist()
+    cols_keep = ["AllCountRank", "OpenSea_AcctName", "ETH_ADDRESS"]+count_cols+["FirstTransfer_blockTime","RecentTransfer_blockTime"]
+    df_tokens_by_adr_platform_wtime_top200 = df_tokens_by_adr_platform_wtime_top200[cols_keep]
+    #rename
+    df_tokens_by_adr_platform_wtime_top200.columns =["Rank","Name","Adr","SuperRare","Foundation","KnownOrigin","MakersPlace","ASYNC","First","Recent"]
+    
     outdir = os.path.join(r"C:\Users\kylej\Documents\GitHub\PatronsOfCulture\data","top_{}_eth_addresses_{}.xlsx".format(top_ranks,datetime.now().strftime("%Y%m%d")))
     df_tokens_by_adr_platform_wtime_top200.to_excel(outdir,index=False)
+    
     
     #####################################
     ### FIRST COLLECTOR ON EACH PLATFORM
