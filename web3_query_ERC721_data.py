@@ -13,6 +13,7 @@ from web3 import Web3
 import json 
 import requests
 import os
+from bs4 import BeautifulSoup
 
 def connect_mainnet(PROJECTID):
     """Connect to Eth mainnet using infura"""     
@@ -222,15 +223,15 @@ def get_opensea_account_name(ETH_ADDRESS):
         name of account associated with ETH ADDRESS
 
     """
-    url = "https://api.opensea.io/api/v1/assets"
-    querystring = {"owner":ETH_ADDRESS,
-                   "order_direction":"asc","offset":str(0),"limit":"1"}
-    #Call API
-    response = requests.request("GET", url, params=querystring)
+    url = "https://opensea.io/accounts/{}".format(ETH_ADDRESS)
+    
     try:
-        adr_acct_name = response.json()["assets"][0]["owner"]["user"]["username"]    
+        response = requests.request("GET", url)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        adr_acct_name = soup.find("div", {"class": "AccountHeader--title"}).contents[0]
     except:
-        adr_acct_name = np.nan
+        adr_acct_name=np.nan
+        
     return adr_acct_name
 
 def get_last_sale_price_opensea(contract_address, tokenID):
@@ -447,7 +448,7 @@ def main():
     #gr = df_creator_owners_top200.groupby("CurrentOwner",as_index=True)
     #top_supported_by_adr = gr.Creator.apply(lambda x: x.mode().iloc[0])
     #df_creator_owners_top200.CurrentOwner.nunique()
-    
+    look= df_creator_owners[(df_creator_owners.CurrentOwner == "0x762da606029d3120735aa1eec15464e265db7a3c")&(df_creator_owners.Platform == "MakersPlace")]
     #####################################
     ### GET INFO ON ADDRESS NAME FROM OPENSEA
     #####################################
@@ -458,13 +459,13 @@ def main():
     
     #Get name from OpenSea
     for eth_adr in df_tokens_by_adr_platform_wtime_top200.itertuples():
-        time.sleep(3)
+        time.sleep(5)
         idx = eth_adr[0]
         ETH_ADDRESS = eth_adr.ETH_ADDRESS
         opensea_name = get_opensea_account_name(ETH_ADDRESS)
         df_tokens_by_adr_platform_wtime_top200.loc[idx,"OpenSea_AcctName"] = opensea_name 
 
-    df_tokens_by_adr_platform_wtime_top200["OpenSea_AcctName"] = np.where(df_tokens_by_adr_platform_wtime_top200["OpenSea_AcctName"]=="NullAddress",np.nan,df_tokens_by_adr_platform_wtime_top200["OpenSea_AcctName"])
+    df_tokens_by_adr_platform_wtime_top200["OpenSea_AcctName"] = np.where(df_tokens_by_adr_platform_wtime_top200["OpenSea_AcctName"]=="Unnamed",np.nan,df_tokens_by_adr_platform_wtime_top200["OpenSea_AcctName"])
     #Save down data 
     df_tokens_by_adr_platform_wtime_top200.drop("to",axis=1,inplace=True)
     df_tokens_by_adr_platform_wtime_top200["RecentTransfer_blockTime"] = df_tokens_by_adr_platform_wtime_top200["RecentTransfer_blockTime"].apply(lambda x: x.replace(tzinfo=None)).dt.date
@@ -473,10 +474,10 @@ def main():
     #Design - Rank / SuperRare , Foundation , KnownOrigin, MakersPlace, ASYNC, First, Most Recent
     
     count_cols = df_tokens_by_adr_platform_wtime_top200.columns[:5].tolist()
-    cols_keep = ["AllCountRank", "OpenSea_AcctName", "ETH_ADDRESS"]+count_cols+["FirstTransfer_blockTime","RecentTransfer_blockTime"]
+    cols_keep = ["AllCountRank", "OpenSea_AcctName", "ETH_ADDRESS", "AllCount"]+count_cols+["FirstTransfer_blockTime","RecentTransfer_blockTime"]
     df_tokens_by_adr_platform_wtime_top200 = df_tokens_by_adr_platform_wtime_top200[cols_keep]
     #rename
-    df_tokens_by_adr_platform_wtime_top200.columns =["Rank","Name","Adr","SuperRare","Foundation","KnownOrigin","MakersPlace","ASYNC","First","Recent"]
+    df_tokens_by_adr_platform_wtime_top200.columns =["Rank","Name","Adr","Total No. Works Owned", "SuperRare","Foundation","KnownOrigin","MakersPlace","ASYNC","First","Recent"]
     df_tokens_by_adr_platform_wtime_top200.First  = df_tokens_by_adr_platform_wtime_top200.First.apply(str)
     df_tokens_by_adr_platform_wtime_top200.Recent = df_tokens_by_adr_platform_wtime_top200.Recent.apply(str)
     

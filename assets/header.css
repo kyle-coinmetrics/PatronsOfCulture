@@ -5,21 +5,28 @@
     font-family:"NeueMachina-Regular";
 }
 .app-header .app-header--title {
-    font-size: 24px;
+    font-size: 30px;
     padding-left: 100px;
 }
 .app-header #app-header--rankings {
-    font-size: 18px;
+    font-size: 20px;
     position: absolute;
     top:15px;
-    right:300px;
+    right:25%;
+    color:#723BC9;
+}
+.app-header #app-header--newsletter {
+    font-size: 20px;
+    position: absolute;
+    top:15px;
+    right:15%;
     color:#723BC9;
 }
 .app-header #app-header--about {
-    font-size: 18px;
+    font-size: 20px;
     position: absolute;
     top:15px;
-    right:225px;
+    right:8.5%;
     color:#723BC9;
 }
 .app-header #app-header--rankings:hover {
@@ -28,4 +35,16 @@
 .app-header #app-header--about:hover {
     color:#723BC980;
 }
-
+.app-header #app-header--newsletter:hover {
+    color:#723BC980;
+}
+#top-200-table {
+	color:#723BC9;
+	font-family:"NeueMachina-Regular";
+	font-size:14px;
+	border: 1px solid #04D9FF;
+}
+a {
+	color:#723BC9;
+	font-family:"NeueMachina-Regular";
+}
