@@ -13,7 +13,6 @@ from dash.dependencies import Input, Output, State
 import requests
 import pandas as pd
 import numpy as np
-import dash_table
 
 ########
 # Data and Variables
