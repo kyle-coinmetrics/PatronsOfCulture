@@ -54,7 +54,7 @@ def get_transfer_events(w3, block_start, block_end, contract, token_contract_add
         "address": w3.toChecksumAddress(token_contract_address),
         "topics": [event_signature]
     })
-    
+
     return logs
 
 def decode_event_logs(logs):
@@ -86,7 +86,7 @@ def decode_event_logs(logs):
         blocknum = event["blockNumber"]
         transaction_index = event["transactionIndex"]    
         event_data[Web3.toInt(txhash)+tknid] = {"txhash":txhash, "from":from_,"to":to_,"tokenID":tknid,'blockNumber':blocknum,'transactionIndex':transaction_index}
-    
+        
     return event_data
 
 def get_block_time(w3, block_num):
@@ -234,7 +234,31 @@ def get_opensea_account_name(ETH_ADDRESS):
         
     return adr_acct_name
 
-def get_last_sale_price_opensea(contract_address, tokenID):
+def get_eth_balance(w3, ETH_ADDRESS):
+    """
+    Get balance in ETH of address
+    
+    Parameters
+    ----------
+    w3 : connection to eth mainnet
+        
+    ETH_ADDRESS : string
+        non-checksum address.
+
+    Returns
+    -------
+    eth_bal : float
+        current balance for address.
+
+    """
+    
+    #Convert to checksum address
+    balance = w3.eth.get_balance(w3.toChecksumAddress(ETH_ADDRESS))
+    eth_bal = w3.fromWei(balance, 'ether')
+
+    return eth_bal
+
+def get_tx_value(w3, txhash):
     """
     Get value of last transaction of coins currently owned by that address
 
@@ -251,19 +275,53 @@ def get_last_sale_price_opensea(contract_address, tokenID):
         total value of ERC-721 transfer transaction
 
     """
-# =============================================================================
-#     WIP
-#     tx = w3.eth.getTransactionReceipt(txhash)
-#     total_eth = w3.toInt(tx["logs"][1]["data"])
-#     look["txhash"].tail(1).iloc[0]
-#     w3.toHex(tx["logs"][4]["data"][:64],encoding="hex"))
-#     w3.toInt(tx["logs"][4]["data"][:66].encode())
-# =============================================================================
+
+    tx = w3.eth.getTransactionReceipt(txhash)
+    topic = w3.toHex(tx["logs"][-1]["topics"][0])
     
-    #8925000000000000000/1e18
-    #10500000000000000000/1e18
+    ######## SuperRare
+    #Sold to
+    if topic == "0x7a212d757c7290587e1c8f7100a01a3d09466d58945058b6f22a179013475a90":    
+        eth_total = int(tx["logs"][-1]["data"][66*3:66*4],16)
+        gas_used = tx["gasUsed"]
     
-    #return total_eth
+    #Bought from
+    elif topic == "0x5764dbcef91eb6f946584f4ea671217c686fa7e858ce4f9f42d08422b86556a9": 
+        eth_total = int(tx["logs"][-1]["data"][:66],16)/1e18
+        gas_used = tx["gasUsed"]
+    
+    #Won auction
+    elif topic == "0x5d22b2d23515fb6c26c46ebec88f4a8b503493be518661c852adf894344cbae7": 
+        eth_total = int(tx["logs"][-1]["data"][:66],16)/1e18
+        gas_used = tx["gasUsed"]
+    
+    #Accepted an offer
+    elif topic == "0x2a9d06eec42acd217a17785dbec90b8b4f01a93ecd8c127edd36bfccf239f8b6": 
+        eth_total = int(tx["logs"][-1]["data"][:66],16)/1e18
+        gas_used = tx["gasUsed"]
+    
+    ######## Foundation
+    #Orders matched - opensea
+    #address = 
+    #topic="0xc4109843e0b7d514e4c093114b863f8e7d8d9a458c372cd51bfe526b588006c9":
+    
+    #Foundation - auction settled on primary market (gross that number up 15%)
+    address = "0xcda72070e455bb31c7690a170224ce43623d0b6f"
+    topic="0x2edb0e99c6ac35be6731dab554c1d1fa1b7beb675090dbb09fb14e615aca1c4a"
+    int("00000000000000000000000000000000000000000000000000d307fc3ba88000",16)
+    
+    ######## KnownOrigin
+    
+    
+    
+    #Get gas price of transaction
+    tx_transaction = w3.eth.getTransaction(txhash)
+    gas_price = tx_transaction["gasPrice"]
+    gas_price_eth = Web3.fromWei(gas_price, 'ether')
+    
+    total_gas_value = gas_used*gas_price_eth
+    
+    return eth_total,total_gas_value
 
 def main():
     
@@ -435,7 +493,7 @@ def main():
     df_tokens_by_adr_platform_wtime = pd.merge(df_tokens_by_adr_platform_wtime,FirstBlockbyAdr[["to","FirstTransfer_blockTime"]],how='left', on="to")
     
     ### TO DO ###
-    #Get Value of most recent acquisitions
+    #Get Value of most recent acquisitions and timeline of acquisitions
     #Get transfers for those tokens currently held by those addresses
     #platforms, tokenIDs = df_creator_owners[df_creator_owners.CurrentOwner.isin(addresses)]["Platform"],df_creator_owners[df_creator_owners.CurrentOwner.isin(addresses)]["tokenID"]
     #transfers_currently_owned_top = all_transfers_top100[(all_transfers_top100.Platform+all_transfers_top100.tokenID.apply(str)).isin(platforms+tokenIDs.apply(str))]
@@ -448,7 +506,7 @@ def main():
     #gr = df_creator_owners_top200.groupby("CurrentOwner",as_index=True)
     #top_supported_by_adr = gr.Creator.apply(lambda x: x.mode().iloc[0])
     #df_creator_owners_top200.CurrentOwner.nunique()
-    look= df_creator_owners[(df_creator_owners.CurrentOwner == "0x762da606029d3120735aa1eec15464e265db7a3c")&(df_creator_owners.Platform == "MakersPlace")]
+    #look= df_creator_owners[(df_creator_owners.CurrentOwner == "0x762da606029d3120735aa1eec15464e265db7a3c")&(df_creator_owners.Platform == "MakersPlace")]
     #####################################
     ### GET INFO ON ADDRESS NAME FROM OPENSEA
     #####################################
@@ -502,3 +560,6 @@ def main():
         filter_first_collector = (df["from"]!= minting_add) & (df["to"] != df["Creator"]) & (~df["to"].isin([FND_auction,MP_auction]))
         first_transfer = df[filter_first_collector].iloc[0]
         first_collectors[platform] = first_transfer
+
+
+
