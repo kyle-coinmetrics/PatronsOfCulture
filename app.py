@@ -41,7 +41,7 @@ df_data.columns = ['Rank', 'Name', 'Total', 'SuperRare', 'Foundation',
 ########### Initiate the app #######
 app = dash.Dash(__name__,update_title=None)
 server = app.server
-app.title="Patrons Of Culture"
+app.title="Patrons of Culture"
 
 """
 ########### Content by Page #########
