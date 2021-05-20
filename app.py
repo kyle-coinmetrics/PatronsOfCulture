@@ -46,13 +46,8 @@ app.title="Patrons of Culture"
 """
 ########### Content by Page #########
 """
-#####################################
-########### RANKINGS  ###############
-#####################################
-rankings = html.Div(className="rankingsPage",
-    children=[
-    #HEADER
-    html.Div([
+
+base_header = html.Div([
     
         html.Div(className="app-header",
              children=[
@@ -73,7 +68,22 @@ rankings = html.Div(className="rankingsPage",
             )
                 ],
     style={"font-family":"NeueMachina-Regular"}
-    ),
+    )
+#FOOTER
+footer = html.Div(className="footer",
+        children= [
+            html.Br(),
+            html.Div("©2021 Patrons of Culture. Designed by Kyle Waters & Jacob Zurita.",
+                 id="footer-text"),
+            html.Br()
+                    ]
+                )
+#####################################
+########### RANKINGS  ###############
+#####################################
+rankings = html.Div(className="rankingsPage",
+    children=[
+    base_header,
     #RANKINGS TABLE
     html.Div(
     html.H2("Aggregate Rankings:",style={
@@ -86,16 +96,7 @@ rankings = html.Div(className="rankingsPage",
     children=dbc.Table.from_dataframe(df_data, id="top-200-table",
                                   )
     ),
-    
-    #FOOTER
-    html.Div(className="footer",
-        children= [
-        html.Br(),
-        html.Div("©2021 Patrons of Culture. Designed by Kyle Waters & Jacob Zurita.",
-                 id="footer-text"),
-        html.Br()
-    ]
-            )
+    footer
     ]
     )
     
@@ -104,28 +105,7 @@ rankings = html.Div(className="rankingsPage",
 #####################################
 about = html.Div(className="aboutPage",
     children=[
-    html.Div([
-    
-        html.Div(className="app-header",
-             children=[
-             
-             html.A(html.H1('PATRONS OF CULTURE',
-                    className="app-header--title",style={'color':'#723BC9'}),
-                    href="/",
-                    style={'text-decoration': 'none'}),
-            
-            html.Div(
-                    children=[
-                        dbc.NavLink("rankings", id="app-header--rankings",href="/", active="exact"),
-                        dbc.NavLink("newsletter", id="app-header--newsletter", href="/newsletter", active="exact"),
-                        dbc.NavLink("about", id="app-header--about", href="/about", active="exact")
-                        ]
-                    )
-            ]
-            )
-                ],
-    style={"font-family":"NeueMachina-Regular"}
-    ),
+    base_header,
     html.Div(className="about-section",
              children=[
                  html.H1("about", id="about-section-header"),
@@ -137,15 +117,7 @@ about = html.Div(className="aboutPage",
                          ),
                          
     ]),
-    #FOOTER
-    html.Div(className="footer",
-        children= [
-        html.Br(),
-        html.Div("©2021 Patrons of Culture. Designed by Kyle Waters & Jacob Zurita.",
-                 id="footer-text"),
-        html.Br()
-    ]
-            )
+    footer
     ]
     )
 
@@ -154,28 +126,7 @@ about = html.Div(className="aboutPage",
 #####################################
 newsletter = html.Div(className="newsletterPage",
     children=[
-    html.Div([
-    
-    html.Div(className="app-header",
-             children=[
-             
-             html.A(html.H1('PATRONS OF CULTURE',
-                    className="app-header--title",style={'color':'#723BC9'}),
-                    href="/",
-                    style={'text-decoration': 'none'}),
-            
-            html.Div(
-                    children=[
-                        dbc.NavLink("rankings", id="app-header--rankings",href="/", active="exact"),
-                        dbc.NavLink("newsletter", id="app-header--newsletter", href="/newsletter", active="exact"),
-                        dbc.NavLink("about", id="app-header--about", href="/about", active="exact")
-                        ]
-                    )
-            ]
-            )
-                ],
-    style={"font-family":"NeueMachina-Regular"}
-    ),
+    base_header,
     
     html.Div(className="Newsletter-content",
              children=[
@@ -184,40 +135,25 @@ newsletter = html.Div(className="newsletterPage",
     html.H5("Coming Soon",
             id="button-sub")]),
     #FOOTER
-    html.Div(className="footer",
-        children= [
-        html.Br(),
-        html.Div("©2021 Patrons of Culture. Designed by Kyle Waters & Jacob Zurita.",
-                 id="footer-text"),
-        html.Br()
-    ]
-            )
+    footer
     ]
     )
+
+#########################################
+########### COLLECTOR PAGE ##############
+#########################################
+
+def get_collector_page(pathname):
+    
+    collector_page = html.Div(
+                    children=[base_header,
+                              html.H5(pathname),
+                              footer])
+    
+    return collector_page
 
 ########### Set up the base layout ###############
 content = html.Div(id="page-content")
-
-base_header = html.Div([
-    
-    html.Div(className="app-header",
-             children=[
-             
-             html.H1('PATRONS OF CULTURE',
-                     className="app-header--title",style={'color':'#723BC9'}),
-            
-            html.Div(
-                    children=[
-                        dbc.NavLink("rankings", id="app-header--rankings",href="/", active="exact"),
-                        dbc.NavLink("newsletter", id="app-header--newsletter", href="/newsletter", active="exact"),
-                        dbc.NavLink("about", id="app-header--about", href="/about", active="exact")
-                        ]
-                    )
-            ]
-            )
-                ],
-    style={"font-family":"NeueMachina-Regular"}
-    )
 
 collector_0xf52393e120f918ffba50410b90a29b1f8250c879 = base_header
 
@@ -232,7 +168,7 @@ def render_page_content(pathname):
     elif pathname == "/newsletter":
         return newsletter
     elif pathname in link_names.tolist():
-        return collector_0xf52393e120f918ffba50410b90a29b1f8250c879
+        return get_collector_page(pathname)
     # If the user tries to reach a different page, return a 404 message
     return dbc.Jumbotron(
         [
