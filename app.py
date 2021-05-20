@@ -39,7 +39,7 @@ df_data.columns = ['Rank', 'Name', 'Total', 'SuperRare', 'Foundation',
        'KnownOrigin', 'MakersPlace', 'ASYNC', 'First', 'Recent']
 
 ########### Initiate the app #######
-app = dash.Dash(__name__,update_title=None)
+app = dash.Dash(__name__)
 server = app.server
 app.title="Patrons of Culture"
 
