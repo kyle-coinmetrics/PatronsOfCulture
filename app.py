@@ -18,7 +18,6 @@ import numpy as np
 # Data and Variables
 ########
 url_github_data = "https://github.com/kylejwaters/PatronsOfCulture/blob/main/data/top_200_eth_addresses_20210525.xlsx?raw=True"
-url_github_data = r"C:\Users\kylej\Documents\GitHub\PatronsOfCulture\data\top_200_eth_addresses_20210525.xlsx"
 df_data = pd.read_excel(url_github_data)
 
 #df_data["Name"] = np.where(
