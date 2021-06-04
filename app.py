@@ -17,7 +17,8 @@ import numpy as np
 ########
 # Data and Variables
 ########
-url_github_data = "https://github.com/kylejwaters/PatronsOfCulture/blob/main/data/top_200_eth_addresses_20210508.xlsx?raw=True"
+url_github_data = "https://github.com/kylejwaters/PatronsOfCulture/blob/main/data/top_200_eth_addresses_20210525.xlsx?raw=True"
+url_github_data = r"C:\Users\kylej\Documents\GitHub\PatronsOfCulture\data\top_200_eth_addresses_20210525.xlsx"
 df_data = pd.read_excel(url_github_data)
 
 #df_data["Name"] = np.where(
@@ -35,8 +36,9 @@ df_data["Name"] = np.where(
     )
 
 df_data.drop("Adr",inplace=True,axis=1)
-df_data.columns = ['Rank', 'Name', 'Total', 'SuperRare', 'Foundation',
+df_data.columns = ['Rank', 'Name', 'Total', 'ETH Total', 'SuperRare', 'Foundation',
        'KnownOrigin', 'MakersPlace', 'ASYNC', 'First', 'Recent']
+df_data.drop('ETH Total',axis=1,inplace=True)
 
 ########### Initiate the app #######
 app = dash.Dash(__name__)
@@ -147,7 +149,7 @@ def get_collector_page(pathname):
     
     collector_page = html.Div(
                     children=[base_header,
-                              html.H5(pathname),
+                              html.A(html.P("OpenSea"),href="https://opensea.io/accounts"+pathname,target="_blank"),
                               footer])
     
     return collector_page
