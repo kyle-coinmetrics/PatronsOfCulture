@@ -14,6 +14,7 @@ import requests
 import pandas as pd
 import numpy as np
 import plotly.express as px
+from plotly.subplots import make_subplots
 
 #Functions
 def update_fig_layout(fig, title:str=None, log:bool=False, log_y2:bool=False, show_legend=True, annotations:bool=True, annotation_x=-0.04, annotation_y=1.03, background_color:str='white', source:str='Coin Metrics', left_axis_format:str=None, number_of_yaxes:int=1, y_axis_range=None, y2_axis_range=None, show_ticks=True):
@@ -122,21 +123,24 @@ def update_fig_layout(fig, title:str=None, log:bool=False, log_y2:bool=False, sh
 
 def get_graphs(collection):
     
-    url_github_data = "https://github.com/kyle-coinmetrics/PatronsOfCulture/blob/main/data/owners_token_count/{}_owners_tokens.csv?raw=True".format(collection)
+    collection_url=collection.replace(" ","%20")
+    url_github_data = "https://github.com/kyle-coinmetrics/PatronsOfCulture/blob/main/data/owners_token_count/{}_owners_tokens.csv?raw=True".format(collection_url)
     
     df = pd.read_csv(url_github_data)
     df['time'] = pd.to_datetime(df.time)
     df["Number of Owners"] = df["num_owners"]
     df["Number of NFTs"] = df["num_tokens"]
+    df["Number of NFTs per Owner"] = df["supply_concentration"]
     
-    df = df[["time","Number of Owners","Number of NFTs"]].melt(id_vars="time")
+    df = df[["time","Number of Owners","Number of NFTs","Number of NFTs per Owner"]].melt(id_vars="time")
     df.columns = ['time','stat','value']
     
     #owners
     fig = px.line(df,
                   x='time',
                   y='value',
-                  facet_col="stat")
+                  facet_col="stat",
+                  color="stat")
     
     fig.layout.images = [dict(
     source='https://cdn.substack.com/image/fetch/w_96,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fbucketeer-e05bbc84-baa3-437e-9518-adb32be77984.s3.amazonaws.com%2Fpublic%2Fimages%2F4430351a-a92c-4505-8c8f-3822d76715df_256x256.png',
@@ -158,29 +162,45 @@ def get_graphs(collection):
             'family': 'Roboto'
         },
         plot_bgcolor = 'white',
+        paper_bgcolor="white",
         yaxis_showgrid=True)
-    fig.add_annotation(x=1,y=-0.20,
-                        text="Source: Coin Metrics",
-                        xref="paper", 
-                        yref="paper",
-                        showarrow=False,
-                              font= {
-                                       'family': 'Roboto',
-                                        'size': 12,
-                                         'color':'black'})
+
     fig = fig.update_xaxes(title_text="")
     fig = fig.update_yaxes(title_text="")
     fig.update_yaxes(matches=None, showticklabels=True, visible=True, gridwidth=1, gridcolor='#ECECED')
     fig.update_xaxes(matches=None, showticklabels=True, visible=True)
     
-    return fig
+    
+    ##### HODl waves
+    subfig = make_subplots(specs=[[{"secondary_y": True}]])
+    fig_ = px.area(df_active_supply,color_discrete_map=color_discrete_map)
+    fig_ = update_fig_layout(fig_,title="SuperRare HODL Waves",source="",left_axis_format="growth")
+    fig_.update_layout(
+        legend_title="")
+    #fig.for_each_trace(lambda trace: trace.update(fillcolor = trace.line.color))
+    fig_.add_hline(y=0.5,line_dash="dash")
+    fig_.for_each_trace(lambda trace: trace.update(line={"width":0.01}))
+    #fig.update_xaxes(range=[datetime(2018,4,6),datetime(2021,9,15)])
+    
+    #fig2 = px.line([],[])
+    #fig2 = fig2.add_scatter(x=punk_MA_price.timestamp, y=punk_MA_price["500saleMA"],marker=dict(color="black"),name="Price: 500 Sales Moving Average ($, log scale RHS)",showlegend=True)
+    #fig2.update_traces(yaxis="y2",showlegend=True)
+    
+    subfig.add_traces(fig_.data)# + fig2.data)
+    subfig = update_fig_layout(subfig, show_legend=True, title="{} HODL Waves".format(collection),source="Coin Metrics",left_axis_format="growth")
+    subfig = subfig.update_layout(showlegend=True)
+    subfig.layout.showlegend = True
+    subfig.layout.yaxis2.type="log"
+    subfig.add_hline(y=0.5,line_dash="dash")
+ 
+    return fig,subfig
 
 ########### Initiate the app #######
 app = dash.Dash(__name__)
 server = app.server
 app.title="jpegstats.io"
 
-projects = ["CryptoPunks","SuperRare","Foundation","Loot"]
+projects = ["CryptoPunks","SuperRare","Foundation","MakersPlace","Loot","Pudgy Penguins"]
 
 """
 ########### Content by Page #########
@@ -232,7 +252,9 @@ rankings = html.Div(className="rankingsPage",
 html.Div(
     
     dcc.Graph(
-        id='analytics')
+        id='analytics'),
+    dcc.Graph(
+        id='hodl_waves')
     ),
     footer
     ]
@@ -242,7 +264,7 @@ html.Div(
 app.layout = rankings
 
 @app.callback(
-    Output('analytics', 'figure'),
+    [Output('analytics', 'figure'),Output('hodl_waves', 'figure')],
     [Input(component_id='collection', component_property='value')]
 )
 
