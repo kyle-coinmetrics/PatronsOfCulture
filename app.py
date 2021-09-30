@@ -170,11 +170,22 @@ def get_graphs(collection):
     fig.update_yaxes(matches=None, showticklabels=True, visible=True, gridwidth=1, gridcolor='#ECECED')
     fig.update_xaxes(matches=None, showticklabels=True, visible=True)
     
-    
     ##### HODl waves
+    url_github_active = "https://github.com/kyle-coinmetrics/PatronsOfCulture/blob/main/data/active_supply/{}_active_supply.pkl".format(collection_url)
+    df_active_supply = pd.read_pickle(url_github_active)
+    
+    color_discrete_map = {'< 1 Week':"darkred", 
+                      '1 Week - 1 Month':"red", 
+                      '1 Month - 3 Months':'darkorange',
+                      '3 Months - 6 Months':'lightblue', 
+                      '6 Months - 1 Year':'royalblue', 
+                      '1-2 Years':'blue', 
+                      '2+ Years':'darkblue',
+                      'Never Moved':'purple'}
+    
     subfig = make_subplots(specs=[[{"secondary_y": True}]])
     fig_ = px.area(df_active_supply,color_discrete_map=color_discrete_map)
-    fig_ = update_fig_layout(fig_,title="SuperRare HODL Waves",source="",left_axis_format="growth")
+    fig_ = update_fig_layout(fig_,source="",left_axis_format="growth")
     fig_.update_layout(
         legend_title="")
     #fig.for_each_trace(lambda trace: trace.update(fillcolor = trace.line.color))
@@ -187,7 +198,7 @@ def get_graphs(collection):
     #fig2.update_traces(yaxis="y2",showlegend=True)
     
     subfig.add_traces(fig_.data)# + fig2.data)
-    subfig = update_fig_layout(subfig, show_legend=True, title="{} HODL Waves".format(collection),source="Coin Metrics",left_axis_format="growth")
+    subfig = update_fig_layout(subfig, show_legend=True, title="{} HODL Waves".format(collection),source="",left_axis_format="growth")
     subfig = subfig.update_layout(showlegend=True)
     subfig.layout.showlegend = True
     subfig.layout.yaxis2.type="log"
@@ -249,12 +260,12 @@ rankings = html.Div(className="rankingsPage",
         multi=False
     ),
         ),
-html.Div(
+html.Div(children=[
     
     dcc.Graph(
         id='analytics'),
     dcc.Graph(
-        id='hodl_waves')
+        id='hodl_waves')]
     ),
     footer
     ]
