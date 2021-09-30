@@ -171,8 +171,13 @@ def get_graphs(collection):
     fig.update_xaxes(matches=None, showticklabels=True, visible=True)
     
     ##### HODl waves
-    url_github_active = "https://github.com/kyle-coinmetrics/PatronsOfCulture/blob/main/data/active_supply/{}_active_supply.pkl".format(collection_url)
-    df_active_supply = pd.read_pickle(url_github_active)
+    url_github_active = "https://github.com/kyle-coinmetrics/PatronsOfCulture/blob/main/data/active_supply/{}_active_supply.csv".format(collection_url)
+    df_active_supply = pd.read_csv(url_github_active)
+    print(df_active_supply)
+    
+    df_active_supply[df_active_supply.columns[0]] = pd.to_datetime(df_active_supply[df_active_supply.columns[0]])
+    df_active_supply.index = df_active_supply[df_active_supply.columns[0]]
+    df_active_supply.drop(df_active_supply.columns[0],axis=1,inplace=True)
     
     color_discrete_map = {'< 1 Week':"darkred", 
                       '1 Week - 1 Month':"red", 
@@ -275,7 +280,8 @@ html.Div(children=[
 app.layout = rankings
 
 @app.callback(
-    [Output('analytics', 'figure'),Output('hodl_waves', 'figure')],
+    [Output('analytics', 'figure'),
+     Output('hodl_waves', 'figure')],
     [Input(component_id='collection', component_property='value')]
 )
 
