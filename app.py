@@ -4,7 +4,7 @@ Created on Sun May  2 19:32:55 2021
 
 @author: kylej
 """
-
+!pip install dash_bootstrap_components
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
@@ -42,7 +42,7 @@ df_data.drop('ETH Total',axis=1,inplace=True)
 ########### Initiate the app #######
 app = dash.Dash(__name__)
 server = app.server
-app.title="Patrons of Culture"
+app.title="jpegstats.io"
 
 """
 ########### Content by Page #########
@@ -53,7 +53,7 @@ base_header = html.Div([
         html.Div(className="app-header",
              children=[
              
-             html.A(html.H1('PATRONS OF CULTURE',
+             html.A(html.H1('JPEGstats',
                     className="app-header--title",style={'color':'#723BC9'}),
                     href="/",
                     style={'text-decoration': 'none'}),
@@ -74,7 +74,7 @@ base_header = html.Div([
 footer = html.Div(className="footer",
         children= [
             html.Br(),
-            html.Div("©2021 Patrons of Culture. Designed by Kyle Waters & Jacob Zurita.",
+            html.Div("©2021",
                  id="footer-text"),
             html.Br()
                     ]
