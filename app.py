@@ -171,10 +171,12 @@ def get_graphs(collection):
     fig.update_xaxes(matches=None, showticklabels=True, visible=True)
     
     ##### HODl waves
-    url_github_active = "https://github.com/kyle-coinmetrics/PatronsOfCulture/blob/main/data/active_supply/{}_active_supply.csv".format(collection_url)
-    df_active_supply = pd.read_csv(url_github_active)
-    print(df_active_supply)
+    url_github_active = "https://github.com/kyle-coinmetrics/PatronsOfCulture/blob/main/data/active_supply/{}_active_supply.csv?raw=True".format(collection_url)
+    df_active_supply = pd.read_csv(url_github_active,engine='python')
     
+    df_active_supply.columns = ['Unnamed: 0', 'Never Moved', '2+ Years', '1-2 Years',
+       '6 Months - 1 Year', '3 Months - 6 Months', '1 Month - 3 Months',
+       '1 Week - 1 Month', '< 1 Week']
     df_active_supply[df_active_supply.columns[0]] = pd.to_datetime(df_active_supply[df_active_supply.columns[0]])
     df_active_supply.index = df_active_supply[df_active_supply.columns[0]]
     df_active_supply.drop(df_active_supply.columns[0],axis=1,inplace=True)
