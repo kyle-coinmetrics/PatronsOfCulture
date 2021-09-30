@@ -4,7 +4,7 @@ Created on Sun May  2 19:32:55 2021
 
 @author: kylej
 """
-!pip install dash_bootstrap_components
+
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
@@ -13,36 +13,174 @@ from dash.dependencies import Input, Output, State
 import requests
 import pandas as pd
 import numpy as np
+import plotly.express as px
 
-########
-# Data and Variables
-########
-url_github_data = "https://github.com/kylejwaters/PatronsOfCulture/blob/main/data/top_200_eth_addresses_20210525.xlsx?raw=True"
-df_data = pd.read_excel(url_github_data)
-
-#df_data["Name"] = np.where(
-#    df_data["Name"].notnull(),
-#    df_data.apply(lambda x: html.A(html.P(x.Name),href="https://opensea.io/accounts/"+x.Adr,target="_blank"),axis=1),
-#    df_data.Adr.apply(lambda x: html.A(html.P(x[:5]+"..." +x[-4:]),href="https://opensea.io/accounts/"+x,target="_blank"))
-#    )
-
-link_names = "/"+df_data.Adr
-  
-df_data["Name"] = np.where(
-    df_data["Name"].notnull(),
-    df_data.apply(lambda x: html.A(html.P(x.Name),href="/"+x.Adr),axis=1),
-    df_data.Adr.apply(lambda x: html.A(html.P(x[:5]+"..." +x[-4:]),href="/"+x))
+#Functions
+def update_fig_layout(fig, title:str=None, log:bool=False, log_y2:bool=False, show_legend=True, annotations:bool=True, annotation_x=-0.04, annotation_y=1.03, background_color:str='white', source:str='Coin Metrics', left_axis_format:str=None, number_of_yaxes:int=1, y_axis_range=None, y2_axis_range=None, show_ticks=True):
+    
+    _annotations = [{
+        'text': f"Source: {source}",
+        'font': {
+            'size': 14,
+            'color': 'black',
+        },
+        'showarrow': False,
+        'align': 'left',
+        'valign': 'top',
+        'x': annotation_x,
+        'y': annotation_y,
+        'xref': 'paper',
+        'yref': 'paper',
+    }]
+    background_color = background_color
+    
+    fig.layout.images = [dict(
+        source='https://cdn.substack.com/image/fetch/w_96,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fbucketeer-e05bbc84-baa3-437e-9518-adb32be77984.s3.amazonaws.com%2Fpublic%2Fimages%2F4430351a-a92c-4505-8c8f-3822d76715df_256x256.png',
+        xref="paper", yref="paper",
+        x=1, y=1,
+        sizex=0.15, sizey=0.15,
+        xanchor="right", yanchor="bottom"
+      )]
+    
+    fig.update_layout(
+        title={
+            'text': title,
+            'font': {
+                'family': 'Roboto',
+                'size': 24
+            }
+        },
+        font = {
+            'family': 'Roboto'
+        },
+        xaxis_showgrid=False,
+        yaxis_showgrid=True,
+        showlegend= show_legend,
+        xaxis = {
+            'title': ''
+        },
+        yaxis = {
+            'type': 'log' if log == True else 'linear',
+            'title': None,
+            'gridcolor': '#ECECED'
+        },
+        yaxis2 = {
+            'type': 'log' if log_y2 == True else 'linear',
+            'overlaying': 'y',
+            'side': 'right'
+        },
+        paper_bgcolor = background_color,
+        plot_bgcolor = background_color,
+        legend= {
+            'bgcolor': background_color, 
+            'xanchor': 'center',
+            'yanchor': 'top',
+            'x': .5,
+            'y': -.1,
+            'orientation': 'h'
+        },
+        annotations= _annotations if annotations == True else None
     )
+    
+    if y_axis_range != None:
+        fig.update_layout(
+            yaxis={'range': y_axis_range}
+        )
 
-df_data.drop("Adr",inplace=True,axis=1)
-df_data.columns = ['Rank', 'Name', 'Total', 'ETH Total', 'SuperRare', 'Foundation',
-       'KnownOrigin', 'MakersPlace', 'ASYNC', 'First', 'Recent']
-df_data.drop('ETH Total',axis=1,inplace=True)
+    if y2_axis_range != None:
+        fig.update_layout(
+            yaxis={'range': y_axis_range}
+        )
+
+    if number_of_yaxes > 1:
+        # y_args = {f'yaxis{i + 1}':{'showgrid': True, 'gridwidth':1, 'gridcolor':'LightGray'} for i in range(number_of_yaxes)}
+        # fig.update_layout(**y_args)
+        y_args = {f'yaxis{i + 1}':{'showgrid': True, 'gridwidth':1, 'gridcolor':'LightGray', 'zeroline':False, 'zerolinewidth':1, 'zerolinecolor': '#000000'} for i in range(number_of_yaxes)}
+        fig.update_layout(**y_args)
+
+    if show_ticks == False:
+        args = {f'yaxis{i + 1}':{'showticklabels': False} for i in range(number_of_yaxes)}
+        fig.update_layout(**args)
+        args = {f'xaxis{i + 1}':{'showticklabels': False} for i in range(number_of_yaxes)}
+        fig.update_layout(**args)
+
+
+    if left_axis_format == 'percentage':
+        args = {f'yaxis{i + 1}':{'ticksuffix': '%', 'side': 'left'} for i in range(number_of_yaxes)}
+        fig.update_layout(**args)
+
+    if left_axis_format == 'growth':
+        fig.update_layout(
+            yaxis = {'tickformat': ',.0%', 'side': 'left'},
+            )
+
+    if left_axis_format == 'dollars':
+        args = {f'yaxis{i+ 1}':{'tickprefix': '$', 'side': 'left'} for i in range(number_of_yaxes)}
+        fig.update_layout(**args)
+
+    return fig
+
+def get_graphs(collection):
+    
+    url_github_data = "https://github.com/kyle-coinmetrics/PatronsOfCulture/blob/main/data/owners_token_count/{}_owners_tokens.csv?raw=True".format(collection)
+    
+    df = pd.read_csv(url_github_data)
+    df['time'] = pd.to_datetime(df.time)
+    df["Number of Owners"] = df["num_owners"]
+    df["Number of NFTs"] = df["num_tokens"]
+    
+    df = df[["time","Number of Owners","Number of NFTs"]].melt(id_vars="time")
+    df.columns = ['time','stat','value']
+    
+    #owners
+    fig = px.line(df,
+                  x='time',
+                  y='value',
+                  facet_col="stat")
+    
+    fig.layout.images = [dict(
+    source='https://cdn.substack.com/image/fetch/w_96,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fbucketeer-e05bbc84-baa3-437e-9518-adb32be77984.s3.amazonaws.com%2Fpublic%2Fimages%2F4430351a-a92c-4505-8c8f-3822d76715df_256x256.png',
+    xref="paper", yref="paper",
+    x=1, y=1,
+    xanchor="right", yanchor="bottom"
+  )]
+    fig.update_yaxes(matches=None, showticklabels=True, visible=True)
+    
+    fig.update_layout(
+        title={
+            'text': "{}".format(collection),
+            'font': {
+                'family': 'Roboto',
+                'size': 24
+            }
+        },
+        font = {
+            'family': 'Roboto'
+        },
+        plot_bgcolor = 'white',
+        yaxis_showgrid=True)
+    fig.add_annotation(x=1,y=-0.20,
+                        text="Source: Coin Metrics",
+                        xref="paper", 
+                        yref="paper",
+                        showarrow=False,
+                              font= {
+                                       'family': 'Roboto',
+                                        'size': 12,
+                                         'color':'black'})
+    fig = fig.update_xaxes(title_text="")
+    fig = fig.update_yaxes(title_text="")
+    fig.update_yaxes(matches=None, showticklabels=True, visible=True, gridwidth=1, gridcolor='#ECECED')
+    fig.update_xaxes(matches=None, showticklabels=True, visible=True)
+    
+    return fig
 
 ########### Initiate the app #######
 app = dash.Dash(__name__)
 server = app.server
 app.title="jpegstats.io"
+
+projects = ["CryptoPunks","SuperRare","Foundation","Loot"]
 
 """
 ########### Content by Page #########
@@ -53,18 +191,15 @@ base_header = html.Div([
         html.Div(className="app-header",
              children=[
              
-             html.A(html.H1('JPEGstats',
-                    className="app-header--title",style={'color':'#723BC9'}),
-                    href="/",
+             html.A(html.H1('JPEGstats.io',
+                    className="app-header--title",style={'color':'#161823'}),
                     style={'text-decoration': 'none'}),
-            
-            html.Div(
+             html.Div(
                     children=[
-                        dbc.NavLink("rankings", id="app-header--rankings",href="/", active="exact"),
-                        dbc.NavLink("newsletter", id="app-header--newsletter", href="/newsletter", active="exact"),
-                        dbc.NavLink("about", id="app-header--about", href="/about", active="exact")
+                        html.Img(src='https://coinmetrics.io/wp-content/uploads/2020/12/coinmetrics-logo@2x.png',id="app-header--about")
                         ]
                     )
+             
             ]
             )
                 ],
@@ -87,97 +222,32 @@ rankings = html.Div(className="rankingsPage",
     base_header,
     #RANKINGS TABLE
     html.Div(
-    html.H2("Aggregate Rankings:",style={
-    "right":"280px",
-    "color":"#723BC9"}),
-    style={'color':'#04D9FF',"font-family":"NeueMachina-Regular"}
+        dcc.Dropdown(
+        id='collection',
+        placeholder="Select an NFT collection",
+        options=[{'label': k, 'value': k} for k in projects],
+        multi=False
     ),
+        ),
+html.Div(
     
-    html.Div(
-    children=dbc.Table.from_dataframe(df_data, id="top-200-table",
-                                  )
+    dcc.Graph(
+        id='analytics')
     ),
     footer
     ]
     )
-    
-#####################################
-########### About  ##################
-#####################################
-about = html.Div(className="aboutPage",
-    children=[
-    base_header,
-    html.Div(className="about-section",
-             children=[
-                 html.H1("about", id="about-section-header"),
-                 html.Div(id="about-section-content",
-                          children=[
-                 html.H3("Patrons of the new creative economy."),
-                 html.H3("We are an analytics resource spotlighting the most prolific crypto art collectors who are supporting creativity and longevity in digital art.")
-                 ]
-                         ),
-                         
-    ]),
-    footer
-    ]
-    )
-
-#####################################
-########### NEWSLETTER ##############
-#####################################
-newsletter = html.Div(className="newsletterPage",
-    children=[
-    base_header,
-    
-    html.Div(className="Newsletter-content",
-             children=[
-    html.H5("Newsletter:",
-            id="subscribe"),
-    html.H5("Coming Soon",
-            id="button-sub")]),
-    #FOOTER
-    footer
-    ]
-    )
-
-#########################################
-########### COLLECTOR PAGE ##############
-#########################################
-
-def get_collector_page(pathname):
-    
-    collector_page = html.Div(
-                    children=[base_header,
-                              html.A(html.P("OpenSea"),href="https://opensea.io/accounts"+pathname,target="_blank"),
-                              footer])
-    
-    return collector_page
 
 ########### Set up the base layout ###############
-content = html.Div(id="page-content")
+app.layout = rankings
 
-collector_0xf52393e120f918ffba50410b90a29b1f8250c879 = base_header
+@app.callback(
+    Output('analytics', 'figure'),
+    [Input(component_id='collection', component_property='value')]
+)
 
-app.layout = html.Div([dcc.Location(id="url"), content])
-
-@app.callback(Output("page-content", "children"), [Input("url", "pathname")])
-def render_page_content(pathname):
-    if pathname == "/":
-        return rankings
-    elif pathname == "/about":
-        return about
-    elif pathname == "/newsletter":
-        return newsletter
-    elif pathname in link_names.tolist():
-        return get_collector_page(pathname)
-    # If the user tries to reach a different page, return a 404 message
-    return dbc.Jumbotron(
-        [
-            html.H1("404: Not found", className="text-danger"),
-            html.Hr(),
-            html.P(f"The pathname {pathname} was not recognised...",style={"font-family":"NeueMachina-Regular"}),
-        ]
-    )                  
+def update_graphs(collection):
+    return get_graphs(collection)                
                      
 if __name__ == '__main__':
     app.run_server()
