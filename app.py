@@ -128,6 +128,8 @@ def get_graphs(collection):
     
     df = pd.read_csv(url_github_data)
     df['time'] = pd.to_datetime(df.time)
+    
+    df = df.iloc[3:]
     df["Number of Owners"] = df["num_owners"]
     df["Number of NFTs"] = df["num_tokens"]
     df["Number of NFTs per Owner"] = df["supply_concentration"]
@@ -136,21 +138,21 @@ def get_graphs(collection):
     df.columns = ['time','stat','value']
     
     #owners
-    fig = px.line(df,
+    owners_tokens = px.line(df,
                   x='time',
                   y='value',
                   facet_col="stat",
                   color="stat")
     
-    fig.layout.images = [dict(
+    owners_tokens.layout.images = [dict(
     source='https://cdn.substack.com/image/fetch/w_96,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fbucketeer-e05bbc84-baa3-437e-9518-adb32be77984.s3.amazonaws.com%2Fpublic%2Fimages%2F4430351a-a92c-4505-8c8f-3822d76715df_256x256.png',
     xref="paper", yref="paper",
     x=1, y=1,
+    sizex=0.15, sizey=0.15,
     xanchor="right", yanchor="bottom"
   )]
-    fig.update_yaxes(matches=None, showticklabels=True, visible=True)
-    
-    fig.update_layout(
+    owners_tokens.update_yaxes(matches=None, showticklabels=True, visible=True)
+    owners_tokens.update_layout(
         title={
             'text': "{}".format(collection),
             'font': {
@@ -165,18 +167,15 @@ def get_graphs(collection):
         paper_bgcolor="white",
         yaxis_showgrid=True)
 
-    fig = fig.update_xaxes(title_text="")
-    fig = fig.update_yaxes(title_text="")
-    fig.update_yaxes(matches=None, showticklabels=True, visible=True, gridwidth=1, gridcolor='#ECECED')
-    fig.update_xaxes(matches=None, showticklabels=True, visible=True)
+    owners_tokens = owners_tokens.update_xaxes(title_text="")
+    owners_tokens = owners_tokens.update_yaxes(title_text="")
+    owners_tokens.update_yaxes(matches=None, showticklabels=True, visible=True, gridwidth=1, gridcolor='#ECECED')
+    owners_tokens.update_xaxes(matches=None, showticklabels=True, visible=True)
     
     ##### HODl waves
     url_github_active = "https://github.com/kyle-coinmetrics/PatronsOfCulture/blob/main/data/active_supply/{}_active_supply.csv?raw=True".format(collection_url)
     df_active_supply = pd.read_csv(url_github_active,engine='python')
     
-    df_active_supply.columns = ['Unnamed: 0', 'Never Moved', '2+ Years', '1-2 Years',
-       '6 Months - 1 Year', '3 Months - 6 Months', '1 Month - 3 Months',
-       '1 Week - 1 Month', '< 1 Week']
     df_active_supply[df_active_supply.columns[0]] = pd.to_datetime(df_active_supply[df_active_supply.columns[0]])
     df_active_supply.index = df_active_supply[df_active_supply.columns[0]]
     df_active_supply.drop(df_active_supply.columns[0],axis=1,inplace=True)
@@ -190,7 +189,7 @@ def get_graphs(collection):
                       '2+ Years':'darkblue',
                       'Never Moved':'purple'}
     
-    subfig = make_subplots(specs=[[{"secondary_y": True}]])
+    hodl_waves = make_subplots(specs=[[{"secondary_y": True}]])
     fig_ = px.area(df_active_supply,color_discrete_map=color_discrete_map)
     fig_ = update_fig_layout(fig_,source="",left_axis_format="growth")
     fig_.update_layout(
@@ -204,14 +203,45 @@ def get_graphs(collection):
     #fig2 = fig2.add_scatter(x=punk_MA_price.timestamp, y=punk_MA_price["500saleMA"],marker=dict(color="black"),name="Price: 500 Sales Moving Average ($, log scale RHS)",showlegend=True)
     #fig2.update_traces(yaxis="y2",showlegend=True)
     
-    subfig.add_traces(fig_.data)# + fig2.data)
-    subfig = update_fig_layout(subfig, show_legend=True, title="{} HODL Waves".format(collection),source="",left_axis_format="growth")
-    subfig = subfig.update_layout(showlegend=True)
-    subfig.layout.showlegend = True
-    subfig.layout.yaxis2.type="log"
-    subfig.add_hline(y=0.5,line_dash="dash")
+    hodl_waves.add_traces(fig_.data)# + fig2.data)
+    hodl_waves = update_fig_layout(hodl_waves, show_legend=True, title="{} HODL Waves".format(collection),annotations=False,left_axis_format="growth")
+    hodl_waves = hodl_waves.update_layout(showlegend=True)
+    hodl_waves.layout.showlegend = True
+    hodl_waves.layout.yaxis2.type="log"
+    hodl_waves.add_hline(y=0.5,line_dash="dash")
+    
+    ###### Sales
+    url_github_active = "https://github.com/kyle-coinmetrics/PatronsOfCulture/blob/main/data/sales/{}.csv?raw=True".format(collection_url)
+    df_sales = pd.read_csv(url_github_active,engine='python')
+    
+    eth_only_sales = df_sales.symbol.isin(["ETH","WETH"])
+    above_0_eth    = (df_sales.total_price > 0 )
+    df_sales_onlyETH = df_sales[eth_only_sales&above_0_eth].copy()
+    vol_by_day = df_sales_onlyETH.groupby("date",as_index=False).total_price_USD.sum()
+    
+    fig = px.bar(vol_by_day, x='date', y='total_price_USD')
+    fig = update_fig_layout(fig, annotations=True,source="Coin Metrics Reference Rates & OpenSea API",title="Daily CryptoPunks Volume (USD)")
+    
+    #update_fig_layout(fig, yaxis_title="USD Volume", extra_annotations=None, extra_source=" Reference Rates & OpenSea API", source_override=None)
+    fig2 = px.line([],[])
+    fig2.add_scatter(x=df_sales_onlyETH.timestamp_dt,y=df_sales_onlyETH.total_price_USD.rolling(500).mean(),marker=dict(color="skyblue"))
+    fig2 = fig2.update_traces(yaxis="y2")
+    
+    vol_price = make_subplots(specs=[[{"secondary_y": True}]])
+    vol_price.add_traces(fig.data + fig2.data)
+    vol_price = update_fig_layout(vol_price,log=False, log_y2=False,annotations=False,title="{} Last 500 Sales Moving Average & Daily Volume".format(collection))
+    vol_price['layout']['yaxis'].update(tickprefix = '$')
+    vol_price['layout']['yaxis2'].update(tickprefix = '$')
+    vol_price.update_layout(showlegend=False)
+        
+    
+    
+    
+    
+    
+    
  
-    return fig,subfig
+    return owners_tokens,hodl_waves,vol_price
 
 ########### Initiate the app #######
 app = dash.Dash(__name__)
@@ -272,7 +302,9 @@ html.Div(children=[
     dcc.Graph(
         id='analytics'),
     dcc.Graph(
-        id='hodl_waves')]
+        id='hodl_waves'),
+    dcc.Graph(
+        id='vol_avg_price')]
     ),
     footer
     ]
@@ -283,7 +315,8 @@ app.layout = rankings
 
 @app.callback(
     [Output('analytics', 'figure'),
-     Output('hodl_waves', 'figure')],
+     Output('hodl_waves', 'figure'),
+     Output('vol_avg_price', 'figure')],
     [Input(component_id='collection', component_property='value')]
 )
 
