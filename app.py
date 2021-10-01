@@ -17,7 +17,7 @@ import plotly.express as px
 from plotly.subplots import make_subplots
 
 #Functions
-def update_fig_layout(fig, title:str=None, log:bool=False, log_y2:bool=False, show_legend=True, annotations:bool=True, annotation_x=-0.04, annotation_y=1.03, background_color:str='white', source:str='Coin Metrics', left_axis_format:str=None, number_of_yaxes:int=1, y_axis_range=None, y2_axis_range=None, show_ticks=True):
+def update_fig_layout(fig, cm_logo_sizex=0.15, cm_logo_sizey=0.15, title:str=None, log:bool=False, log_y2:bool=False, show_legend=True, annotations:bool=True, annotation_x=-0.005, annotation_y=1.05, background_color:str='white', source:str='Coin Metrics', left_axis_format:str=None, number_of_yaxes:int=1, y_axis_range=None, y2_axis_range=None, show_ticks=True):
     
     _annotations = [{
         'text': f"Source: {source}",
@@ -39,7 +39,7 @@ def update_fig_layout(fig, title:str=None, log:bool=False, log_y2:bool=False, sh
         source='https://cdn.substack.com/image/fetch/w_96,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fbucketeer-e05bbc84-baa3-437e-9518-adb32be77984.s3.amazonaws.com%2Fpublic%2Fimages%2F4430351a-a92c-4505-8c8f-3822d76715df_256x256.png',
         xref="paper", yref="paper",
         x=1, y=1,
-        sizex=0.15, sizey=0.15,
+        sizex=cm_logo_sizex, sizey=cm_logo_sizey,
         xanchor="right", yanchor="bottom"
       )]
     
@@ -134,11 +134,11 @@ def get_graphs(collection):
     df["Number of NFTs"] = df["num_tokens"]
     df["Number of NFTs per Owner"] = df["supply_concentration"]
     
-    df = df[["time","Number of Owners","Number of NFTs","Number of NFTs per Owner"]].melt(id_vars="time")
-    df.columns = ['time','stat','value']
+    df_melt = df[["time","Number of Owners","Number of NFTs","Number of NFTs per Owner"]].melt(id_vars="time")
+    df_melt.columns = ['time','stat','value']
     
     #owners
-    owners_tokens = px.line(df,
+    owners_tokens = px.line(df_melt,
                   x='time',
                   y='value',
                   facet_col="stat",
@@ -171,6 +171,7 @@ def get_graphs(collection):
     owners_tokens = owners_tokens.update_yaxes(title_text="")
     owners_tokens.update_yaxes(matches=None, showticklabels=True, visible=True, gridwidth=1, gridcolor='#ECECED')
     owners_tokens.update_xaxes(matches=None, showticklabels=True, visible=True)
+    owners_tokens.update_layout(font_family="NeueMachina-Regular",title_font_family="NeueMachina-Regular")
     
     ##### HODl waves
     url_github_active = "https://github.com/kyle-coinmetrics/PatronsOfCulture/blob/main/data/active_supply/{}_active_supply.csv?raw=True".format(collection_url)
@@ -204,11 +205,12 @@ def get_graphs(collection):
     #fig2.update_traces(yaxis="y2",showlegend=True)
     
     hodl_waves.add_traces(fig_.data)# + fig2.data)
-    hodl_waves = update_fig_layout(hodl_waves, show_legend=True, title="{} HODL Waves".format(collection),annotations=False,left_axis_format="growth")
+    hodl_waves = update_fig_layout(hodl_waves, show_legend=True, title="{} HODL Waves".format(collection),annotations=True,left_axis_format="growth")
     hodl_waves = hodl_waves.update_layout(showlegend=True)
     hodl_waves.layout.showlegend = True
     hodl_waves.layout.yaxis2.type="log"
     hodl_waves.add_hline(y=0.5,line_dash="dash")
+    hodl_waves.update_layout(font_family="NeueMachina-Regular",title_font_family="NeueMachina-Regular")
     
     ###### Sales
     url_github_active = "https://github.com/kyle-coinmetrics/PatronsOfCulture/blob/main/data/sales/{}.csv?raw=True".format(collection_url)
@@ -229,22 +231,44 @@ def get_graphs(collection):
     
     vol_price = make_subplots(specs=[[{"secondary_y": True}]])
     vol_price.add_traces(fig.data + fig2.data)
-    vol_price = update_fig_layout(vol_price,log=False, log_y2=False,annotations=False,title="{} Last 500 Sales Moving Average & Daily Volume".format(collection))
+    vol_price = update_fig_layout(vol_price,log=False, log_y2=False,annotations=True,title="{} Last 500 Sales Moving Average & Daily Volume".format(collection),source='Coin Metrics Reference Rates & OpenSea API')
     vol_price['layout']['yaxis'].update(tickprefix = '$')
     vol_price['layout']['yaxis2'].update(tickprefix = '$')
-    vol_price.update_layout(showlegend=False)
-        
+    vol_price.update_layout(showlegend=False,font_family="NeueMachina-Regular",title_font_family="NeueMachina-Regular")
+    
+    top10 = df_sales_onlyETH.sort_values("total_price_USD",ascending=False).head(10)
+    top10_fig = px.line([],[])
+    top10_fig.add_table(header=dict(values=["NFT","Date","USD Price","ETH Price"]),cells=dict(values=[top10.name, top10.date, round(top10.total_price_USD,0), round(top10.total_price,0)], format=["","","$,.9",",.9",""]))
+    top10_fig = update_fig_layout(top10_fig,title="{} Top 10 Highest Sales".format(collection),annotations=True,source="Coin Metrics Reference Rates & OpenSea API")
+    top10_fig.update_layout(font_family="NeueMachina-Regular",title_font_family="NeueMachina-Regular")
+    
     ## Realized Cap
-    url_github_active = "https://github.com/kyle-coinmetrics/PatronsOfCulture/blob/main/data/sales/{}.csv?raw=True".format(collection_url)
+    url_github_active = "https://github.com/kyle-coinmetrics/PatronsOfCulture/blob/main/data/realized_cap/{}.csv?raw=True".format(collection_url)
     df_realized_cap = pd.read_csv(url_github_active,engine='python')
     df_realized_cap[df_realized_cap.columns[0]] =  pd.to_datetime(df_realized_cap[df_realized_cap.columns[0]])
-    
-    realized_cap = px.area(df_realized_cap)
+    realized_cap = px.area(df_realized_cap,x=df_realized_cap.columns[0],y="Realized Cap")
     realized_cap = update_fig_layout(realized_cap, annotations=True,source="Coin Metrics Reference Rates & OpenSea API",title='{} Realized Cap (USD)'.format(collection),show_legend=False) 
     realized_cap.update_layout(yaxis_tickprefix = '$')
     realized_cap.for_each_trace(lambda trace: trace.update(fillcolor = trace.line.color))
+    realized_cap.update_layout(font_family="NeueMachina-Regular",title_font_family="NeueMachina-Regular")
     
-    return owners_tokens,hodl_waves,vol_price,realized_cap
+    ## Headline Statistics
+    realized_cap_recent    = df_realized_cap["Realized Cap"].iloc[-1]
+    vol_last_30_days = vol_by_day.tail(30).total_price_USD.sum()
+    unique_owners_recent    = df["Number of Owners"].iloc[-1] 
+    cumulative_vol = vol_by_day.total_price_USD.sum()
+    
+    headline = px.line([],[],height=70)
+    headline.add_table(header=dict(values=["Realized Cap","Unique Owners","USD Volume (30 Days)","USD Volume (All Time)"],height=40),cells=dict(values=[round(realized_cap_recent,0),unique_owners_recent,round(vol_last_30_days,0),round(cumulative_vol,0)], height=40,format=["$,",",","$,","$,"]))
+    headline.update_layout(paper_bgcolor="white",plot_bgcolor="white",font=dict(size=22),font_family="NeueMachina-Regular",title_font_family="NeueMachina-Regular",    margin=dict(
+        l=0,
+        r=0,
+        b=0,
+        t=0,
+        pad=0
+    ))
+    
+    return owners_tokens,hodl_waves,vol_price,realized_cap,top10_fig,headline
 
 ########### Initiate the app #######
 app = dash.Dash(__name__)
@@ -266,8 +290,9 @@ base_header = html.Div([
                     className="app-header--title",style={'color':'#161823'}),
                     style={'text-decoration': 'none'}),
              html.Div(
-                    children=[
-                        html.Img(src='https://coinmetrics.io/wp-content/uploads/2020/12/coinmetrics-logo@2x.png',id="app-header--about")
+                    children=[html.A(
+                        html.Div("An NFT Analytics Resource from Coin Metrics", id="app-header--about"),
+                        )
                         ]
                     )
              
@@ -291,23 +316,27 @@ footer = html.Div(className="footer",
 rankings = html.Div(className="rankingsPage",
     children=[
     base_header,
-    #RANKINGS TABLE
     html.Div(
         dcc.Dropdown(
         id='collection',
-        placeholder="Select an NFT collection",
+        placeholder="Select an NFT project",
         options=[{'label': k, 'value': k} for k in projects],
         multi=False
-    ),
-        ),
+    )),
 html.Div(children=[
     
+    dcc.Graph(
+        id="headline_stats"),
     dcc.Graph(
         id='analytics'),
     dcc.Graph(
         id='hodl_waves'),
     dcc.Graph(
-        id='vol_avg_price')]
+        id='realized_cap'),
+    dcc.Graph(
+        id='vol_avg_price'),
+    dcc.Graph(
+        id='10highest_sales')],
     ),
     footer
     ]
@@ -319,7 +348,10 @@ app.layout = rankings
 @app.callback(
     [Output('analytics', 'figure'),
      Output('hodl_waves', 'figure'),
-     Output('vol_avg_price', 'figure')],
+     Output('vol_avg_price', 'figure'),
+     Output('realized_cap', 'figure'),
+     Output('10highest_sales', 'figure'),
+     Output('headline_stats', 'figure')],
     [Input(component_id='collection', component_property='value')]
 )
 
