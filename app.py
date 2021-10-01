@@ -154,7 +154,7 @@ def get_graphs(collection):
     owners_tokens.update_yaxes(matches=None, showticklabels=True, visible=True)
     owners_tokens.update_layout(
         title={
-            'text': "{}".format(collection),
+            'text': "{} Owner Stats".format(collection),
             'font': {
                 'family': 'Roboto',
                 'size': 24
@@ -234,14 +234,17 @@ def get_graphs(collection):
     vol_price['layout']['yaxis2'].update(tickprefix = '$')
     vol_price.update_layout(showlegend=False)
         
+    ## Realized Cap
+    url_github_active = "https://github.com/kyle-coinmetrics/PatronsOfCulture/blob/main/data/sales/{}.csv?raw=True".format(collection_url)
+    df_realized_cap = pd.read_csv(url_github_active,engine='python')
+    df_realized_cap[df_realized_cap.columns[0]] =  pd.to_datetime(df_realized_cap[df_realized_cap.columns[0]])
     
+    realized_cap = px.area(df_realized_cap)
+    realized_cap = update_fig_layout(realized_cap, annotations=True,source="Coin Metrics Reference Rates & OpenSea API",title='{} Realized Cap (USD)'.format(collection),show_legend=False) 
+    realized_cap.update_layout(yaxis_tickprefix = '$')
+    realized_cap.for_each_trace(lambda trace: trace.update(fillcolor = trace.line.color))
     
-    
-    
-    
-    
- 
-    return owners_tokens,hodl_waves,vol_price
+    return owners_tokens,hodl_waves,vol_price,realized_cap
 
 ########### Initiate the app #######
 app = dash.Dash(__name__)
